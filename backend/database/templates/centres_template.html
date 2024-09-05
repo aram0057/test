@@ -1,0 +1,28 @@
+<!-- centres_template.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Centres Data</title>
+</head>
+<body>
+    <h1>Waste Centres</h1>
+    <table border="1">
+        <tr>
+            <th>Centre Name</th>
+            <th>Address</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Waste Type</th>
+        </tr>
+        {% for centre in centres %}
+        <tr>
+            <td>{{ centre.name }}</td>
+            <td>{{ centre.address }}</td>
+            <td>{{ centre.latitude }}</td>
+            <td>{{ centre.longitude }}</td>
+            <td>{{ centre.waste.waste_type }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
