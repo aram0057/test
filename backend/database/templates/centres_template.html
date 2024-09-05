@@ -1,28 +1,186 @@
-<!-- centres_template.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Centres Data</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waste Centres</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .table-container {
+            width: 45%;
+            padding-right: 20px;
+        }
+
+        .map-container {
+            width: 50%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        #map {
+            width: 100%;
+            height: 500px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        .form-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-container select {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Waste Centres</h1>
-    <table border="1">
-        <tr>
-            <th>Centre Name</th>
-            <th>Address</th>
-            <th>Latitude</th>
-            <th>Longitude</th>
-            <th>Waste Type</th>
-        </tr>
-        {% for centre in centres %}
-        <tr>
-            <td>{{ centre.name }}</td>
-            <td>{{ centre.address }}</td>
-            <td>{{ centre.latitude }}</td>
-            <td>{{ centre.longitude }}</td>
-            <td>{{ centre.waste.waste_type }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+
+    <!-- Container for Filters -->
+    <div class="form-container">
+        <!-- Waste Type Filter Dropdown -->
+        <form method="GET" id="waste-filter-form">
+            <label for="waste_type">Choose Waste Type:</label>
+            <select name="waste_type" id="waste_type" onchange="document.getElementById('waste-filter-form').submit();">
+                <option value="">All</option>
+                <option value="Batteries">Batteries</option>
+                <option value="Electrical Appliances">Electrical Appliances</option>
+                <option value="Mattresses">Mattresses</option>
+                <option value="Plastic Bottles and Containers">Plastic Bottles and Containers</option>
+                <option value="Soft Plastic">Soft Plastic</option>
+                <option value="Clothing and Textile">Clothing and Textile</option>
+                <option value="Paint">Paint</option>
+            </select>
+        </form>
+
+        <!-- Postcode Filter Dropdown -->
+        <form method="GET" id="postcode-form">
+            <label for="postcode">Choose a Postcode or Suburb:</label>
+            <select name="postcode" id="postcode" onchange="updateMap()">
+                <option value="">Select...</option>
+                <option value="3000" data-lat="-37.8136" data-lng="144.9631">3000 - Melbourne CBD</option>
+                <option value="3002" data-lat="-37.8124" data-lng="144.9750">3002 - East Melbourne</option>
+                <option value="3003" data-lat="-37.8083" data-lng="144.9475">3003 - West Melbourne</option>
+                <option value="3004" data-lat="-37.8141" data-lng="144.9715">3004 - Melbourne (St Kilda Road area)</option>
+                <option value="3006" data-lat="-37.8234" data-lng="144.9552">3006 - Southbank</option>
+                <option value="3008" data-lat="-37.8171" data-lng="144.9535">3008 - Docklands</option>
+                <option value="3031" data-lat="-37.7885" data-lng="144.9443">3031 - Kensington, Flemington</option>
+                <option value="3051" data-lat="-37.8060" data-lng="144.9382">3051 - North Melbourne</option>
+                <option value="3052" data-lat="-37.8015" data-lng="144.9568">3052 - Parkville</option>
+                <option value="3053" data-lat="-37.8056" data-lng="144.9635">3053 - Carlton</option>
+                <option value="3054" data-lat="-37.8046" data-lng="144.9688">3054 - Carlton North</option>
+                <option value="3056" data-lat="-37.7671" data-lng="144.9637">3056 - Brunswick</option>
+                <option value="3057" data-lat="-37.7701" data-lng="144.9700">3057 - Brunswick East</option>
+                <option value="3065" data-lat="-37.8028" data-lng="144.9730">3065 - Fitzroy</option>
+                <option value="3066" data-lat="-37.8001" data-lng="144.9815">3066 - Collingwood</option>
+                <option value="3067" data-lat="-37.8074" data-lng="144.9895">3067 - Abbotsford</option>
+                <option value="3068" data-lat="-37.7872" data-lng="144.9807">3068 - Clifton Hill, Fitzroy North</option>
+                <option value="3070" data-lat="-37.7615" data-lng="144.9978">3070 - Northcote</option>
+                <option value="3121" data-lat="-37.8180" data-lng="144.9780">3121 - Richmond</option>
+                <option value="3141" data-lat="-37.8320" data-lng="144.9850">3141 - South Yarra</option>
+                <option value="3205" data-lat="-37.8302" data-lng="144.9670">3205 - South Melbourne</option>
+                <option value="3206" data-lat="-37.8200" data-lng="144.9556">3206 - Albert Park</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Container for Table and Map -->
+    <div class="container">
+        <!-- Table showing filtered waste centres -->
+        <div class="table-container">
+            <table>
+                <tr>
+                    <th>Centre Name</th>
+                    <th>Address</th>
+                    <th>Waste Type</th>
+                </tr>
+                {% for centre in centres %}
+                <tr>
+                    <td>{{ centre.name }}</td>
+                    <td>{{ centre.address }}</td>
+                    <td>{{ centre.waste.waste_type }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <!-- Mapbox map -->
+        <div class="map-container">
+            <div id='map'></div>
+        </div>
+    </div>
+
+    <!-- Safely include centres data -->
+    <script id="centres-data" type="application/json">{{ centres_data_json|safe }}</script>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiYWJiaXNoZWsiLCJhIjoiY2x6Y2trYzY5MGNucTJqcHFnMzVhNnhvcyJ9.ruwp1n7aBJwok0LXQyyRNQ';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [144.9631, -37.8136],  // Melbourne's default center
+            zoom: 12
+        });
+
+        map.addControl(new mapboxgl.NavigationControl());
+
+        // Fetch centres data safely using JSON.parse
+        var centres = JSON.parse(document.getElementById('centres-data').textContent);
+        
+        // Debug: Log the data to check if it's correct
+        console.log('Centres Data:', centres);
+
+        // Adding markers for each waste center
+        if (centres.length > 0) {
+            centres.forEach(function(centre) {
+                new mapboxgl.Marker()
+                    .setLngLat([centre.longitude, centre.latitude])
+                    .setPopup(new mapboxgl.Popup({ offset: 25 })  // Popups with centre info
+                    .setText(centre.name + ' (' + centre.waste__waste_type + ')'))
+                    .addTo(map);
+            });
+        } else {
+            console.error("No centres available to display on the map.");
+        }
+
+        function updateMap() {
+            var select = document.getElementById('postcode');
+            var selectedOption = select.options[select.selectedIndex];
+            var lat = parseFloat(selectedOption.getAttribute('data-lat'));
+            var lng = parseFloat(selectedOption.getAttribute('data-lng'));
+
+            if (lat && lng) {
+                map.setCenter([lng, lat]);
+                map.setZoom(14);  // Optional: Set zoom level
+            }
+        }
+    </script>
 </body>
 </html>
