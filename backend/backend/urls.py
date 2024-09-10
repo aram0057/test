@@ -15,13 +15,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
-
 from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('database/', include('database.urls')),
-    path('', include('database.urls')),  # Redirect the root URL to the 'database' app
+    path('database/', include('database.urls')),  # Routes for 'database' app
+     path('plants/', include('plants.urls')),
+    path('', include('database.urls')),           # Root URL also points to 'database' app views
 ]
-
